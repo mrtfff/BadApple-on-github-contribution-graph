@@ -178,14 +178,17 @@ def test_video_path_is_found_by_name(tmp_path, monkeypatch):
     assert settings._videoyu_coz() == Path(probe.name)
 
 
-def test_missing_video_names_the_ones_that_exist(clip, monkeypatch, capsys):
+def test_missing_video_names_the_ones_that_exist(tmp_path, monkeypatch):
     import main as settings
 
+    (tmp_path / "ornek.mp4").write_bytes(b"")
+    monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(settings, "VIDEO", "boyle-bir-video-yok.mp4")
     with pytest.raises(FileNotFoundError) as hata:
         settings._videoyu_coz()
     assert "video bulunamadı" in str(hata.value)
     assert "bulunan videolar" in str(hata.value)
+    assert "ornek.mp4" in str(hata.value)
 
 
 def test_menu_warns_when_the_video_is_missing(monkeypatch, capsys):
