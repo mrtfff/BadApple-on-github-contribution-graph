@@ -153,6 +153,20 @@ def duration(path: str | Path) -> float:
         raise ValueError(f"cannot read duration of {path}") from exc
 
 
+def frame_rate(path: str | Path) -> float:
+    """Frames per second of the first video stream, for exact frame indexing."""
+    out = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+         "stream=r_frame_rate", "-of", "csv=p=0", str(path)],
+        check=True, capture_output=True, text=True,
+    )
+    num, _, den = out.stdout.strip().partition("/")
+    try:
+        return float(num) / float(den or 1)
+    except (ValueError, ZeroDivisionError) as exc:
+        raise ValueError(f"cannot read the frame rate of {path}") from exc
+
+
 def read_bitmaps(
     path: str | Path,
     *,
@@ -167,9 +181,10 @@ def read_bitmaps(
 ) -> list[Bitmap]:
     """Sample ``count`` frames spread evenly over the video from ``start``.
 
-    Each returned frame is ``size`` - normally 53 x (7 * bands) cells.  The fps
-    filter rounds to whole frames, so a short film can decode fewer than asked
-    for; the last frame is then held to keep the count exact.
+    Frames are picked by index rather than by a frame-rate filter, so the first
+    sample really is the frame at ``start`` and the rest land where the
+    arithmetic says.  Each returned frame is ``size`` - normally
+    53 x (7 * bands) cells.
     """
     path = Path(path)
     if count < 1:
@@ -181,16 +196,19 @@ def read_bitmaps(
     seconds = duration(path)
     if not 0 <= start < seconds:
         raise ValueError(f"start must be inside the film: 0 <= start < {seconds:.2f}")
-    usable = seconds - start
-    filters = [f"fps={count / usable:.6f}"] if usable > 0 else []
-    filters.append(f"scale={PROBE_WIDTH}:{PROBE_HEIGHT}:flags=area")
-    filters.append("format=gray")
+    rate = frame_rate(path)
+    first = round(start * rate)
+    step = max(1, round((seconds - start) * rate / count))
+    pick = f"if(gte(n\\,{first})*eq(mod(n-{first}\\,{step})\\,0)\\,1\\,0)"
+    filters = [f"select={pick}",
+               f"scale={PROBE_WIDTH}:{PROBE_HEIGHT}:flags=area",
+               "format=gray"]
     frame_size = PROBE_WIDTH * PROBE_HEIGHT
-    command = ["ffmpeg", "-v", "error", "-y"]
+    command = ["ffmpeg", "-v", "error", "-y", "-i", str(path)]
     if start > 0:
         command += ["-ss", f"{start:.3f}"]
-    command += ["-i", str(path), "-vf", ",".join(filters),
-                "-frames:v", str(count), "-f", "rawvideo", "-pix_fmt", "gray", "-"]
+    command += ["-vf", ",".join(filters), "-vsync", "0", "-frames:v", str(count),
+                "-f", "rawvideo", "-pix_fmt", "gray", "-"]
     proc = subprocess.run(command, check=False, capture_output=True)
     if proc.returncode != 0:
         raise RuntimeError(f"ffmpeg failed: {proc.stderr.decode(errors='replace').strip()}")

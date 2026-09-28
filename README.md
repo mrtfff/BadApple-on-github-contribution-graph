@@ -83,16 +83,17 @@ bright as the figure itself. Counting ink keeps the shape and leaves
 Frames map onto years in order, newest year on top, the way a profile reads:
 
 ```
-frame 0  ->  years 1868-1870   (oldest, printed first, at the bottom)
+frame 0  ->  years 1868-1870   (oldest, printed first, at the top)
 frame 1  ->  years 1871-1873
 ...
-frame 52 ->  years 2024-2026   (newest, at the top of the poster)
+frame 52 ->  years 2024-2026   (newest, at the bottom of the poster)
 ```
 
 Fifty-three frames of Bad Apple!! (3:39) become 159 years of profile history,
 one frame every four seconds or so. The newest band is the current year, so in
-2026 the poster spans 1868 to 2026. Each frame's top row lands in the newest of
-its three bands, so the picture reads top-down.
+2026 the poster spans 1868 to 2026. Bands are printed and drawn in year order,
+oldest at the top, so each frame reads the right way up and scrolling down
+plays the film forwards.
 
 ## Requirements
 
@@ -248,7 +249,7 @@ pip install -r requirements-dev.txt
 python3 -m pytest
 ```
 
-123 tests cover the date geometry, the colour buckets, the subject window, the
+126 tests cover the date geometry, the colour buckets, the subject window, the
 three pooling modes, the band layout, all three renderers, the preflight
 checks, the sound paths and the CLI. The ffmpeg-backed ones build their own
 one-second clip and skip when ffmpeg is not installed; the rest are pure Python.

@@ -75,8 +75,20 @@ def test_fill_option_prints_the_whole_week():
 def test_film_is_printed_oldest_year_first():
     printer = Printer(start_year=2026).print_film([art(".#"), art("."), art(".##")], years=3)
     assert [g.year for g in printer.grids] == [2024, 2025, 2026]
-    assert [g.year for g in printer.bands()] == [2026, 2025, 2024]
+    assert [g.year for g in printer.bands()] == [2024, 2025, 2026]
     assert [g.total() for g in printer.grids] == [MAX_COUNT, 0, 2 * MAX_COUNT]
+
+
+def test_a_tall_frame_reads_top_down():
+    """Ink in the frame's first seven rows must land in the band drawn first."""
+    rows = ["." + "#" * 52] + ["." * 53] * 20
+    printer = Printer(start_year=2026, fill_outside=True)
+    printer._press(art(*rows), 2020)
+    ordered = printer.bands()
+    assert [g.year for g in ordered] == [2020, 2021, 2022]
+    assert ordered[0].get(1, 0) == MAX_COUNT      # the top strip, drawn highest
+    assert ordered[1].get(1, 0) == 0
+    assert ordered[2].get(1, 0) == 0
 
 
 def test_film_spreads_over_all_given_frames():
@@ -145,7 +157,8 @@ def test_print_frame_returns_the_newest_band_of_a_tall_frame():
 def test_film_bands_do_not_overlap():
     printer = Printer(start_year=2026, fill_outside=True).print_film([tall(), tall()], years=2)
     assert [g.year for g in printer.grids] == [2021, 2022, 2023, 2024, 2025, 2026]
-    assert printer.bands()[0].year == 2026
+    assert printer.bands()[0].year == 2021
+    assert printer.bands()[-1].year == 2026
 
 
 def test_a_short_frame_is_padded_into_one_band():

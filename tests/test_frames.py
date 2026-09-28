@@ -1,6 +1,8 @@
 import pytest
 
-from badapple.frames import Bitmap, read_bitmaps, reduce_to_cells, sample, window_for
+from badapple.frames import (
+    Bitmap, frame_rate, read_bitmaps, reduce_to_cells, sample, window_for,
+)
 from conftest import requires_ffmpeg
 
 
@@ -159,3 +161,16 @@ def test_start_outside_the_film_is_refused(clip):
         read_bitmaps(clip, count=1, size=(53, 7), start=99.0)
     with pytest.raises(ValueError):
         read_bitmaps(clip, count=1, size=(53, 7), start=-1.0)
+
+
+@requires_ffmpeg
+def test_frame_rate_is_read_from_the_file(clip):
+    assert frame_rate(clip) == pytest.approx(5.0, abs=0.01)
+
+
+@requires_ffmpeg
+def test_the_first_sample_is_the_frame_at_the_offset(moving):
+    """count must not move where the samples land."""
+    one = read_bitmaps(moving, count=1, size=(53, 7), start=0.5)
+    many = read_bitmaps(moving, count=4, size=(53, 7), start=0.5)
+    assert one[0].pixels == many[0].pixels

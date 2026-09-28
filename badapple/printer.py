@@ -97,7 +97,10 @@ class Printer:
     def _press(self, frame: Bitmap, year: int) -> list[Grid]:
         """Press a frame into consecutive year bands, one per seven rows.
 
-        A frame shorter than a whole number of bands is padded with empty rows.
+        Bands are returned and drawn in year order, so a frame spanning several
+        bands reads top-down and the poster runs from the oldest year at the
+        top to the newest at the bottom.  A frame shorter than a whole number
+        of bands is padded with empty rows.
         """
         strips = max(1, -(-frame.height // WEEKDAYS))
         x0, y0 = self._origin(frame)
@@ -123,8 +126,8 @@ class Printer:
         """Print ``years`` frames sampled evenly across ``frames``.
 
         A frame taller than seven rows is printed across several consecutive
-        year bands, its top row in the newest of them, so the picture reads
-        top-down on the poster.
+        year bands, so the poster reads top-down: the oldest year first, the
+        newest last.
         """
         if not frames:
             raise ValueError("no frames to print")
@@ -140,8 +143,8 @@ class Printer:
         return self
 
     def bands(self) -> list[Grid]:
-        """Printed years, newest first (the order a profile reads top down)."""
-        return list(reversed(self.grids))
+        """The printed years in the order they are drawn: oldest at the top."""
+        return list(self.grids)
 
     def stats(self) -> PrintStats:
         grids = self.grids
