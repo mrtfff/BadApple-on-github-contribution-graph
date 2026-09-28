@@ -163,8 +163,9 @@ def read_bitmaps(
     pool: str = "coverage",
     crop_threshold: float = 0.35,
     margin: float = 0.15,
+    start: float = 0.0,
 ) -> list[Bitmap]:
-    """Sample ``count`` frames spread evenly over the whole video.
+    """Sample ``count`` frames spread evenly over the video from ``start``.
 
     Each returned frame is ``size`` - normally 53 x (7 * bands) cells.  The fps
     filter rounds to whole frames, so a short film can decode fewer than asked
@@ -178,17 +179,19 @@ def read_bitmaps(
     if not path.exists():
         raise FileNotFoundError(path)
     seconds = duration(path)
-    filters = []
-    if seconds > 0:
-        filters.append(f"fps={count / seconds:.6f}")
+    if not 0 <= start < seconds:
+        raise ValueError(f"start must be inside the film: 0 <= start < {seconds:.2f}")
+    usable = seconds - start
+    filters = [f"fps={count / usable:.6f}"] if usable > 0 else []
     filters.append(f"scale={PROBE_WIDTH}:{PROBE_HEIGHT}:flags=area")
     filters.append("format=gray")
     frame_size = PROBE_WIDTH * PROBE_HEIGHT
-    proc = subprocess.run(
-        ["ffmpeg", "-v", "error", "-i", str(path), "-vf", ",".join(filters),
-         "-frames:v", str(count), "-f", "rawvideo", "-pix_fmt", "gray", "-"],
-        check=False, capture_output=True,
-    )
+    command = ["ffmpeg", "-v", "error", "-y"]
+    if start > 0:
+        command += ["-ss", f"{start:.3f}"]
+    command += ["-i", str(path), "-vf", ",".join(filters),
+                "-frames:v", str(count), "-f", "rawvideo", "-pix_fmt", "gray", "-"]
+    proc = subprocess.run(command, check=False, capture_output=True)
     if proc.returncode != 0:
         raise RuntimeError(f"ffmpeg failed: {proc.stderr.decode(errors='replace').strip()}")
     raw = proc.stdout

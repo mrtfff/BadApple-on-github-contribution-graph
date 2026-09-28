@@ -5,12 +5,34 @@ page, using GitHub's own geometry, palette and year layout. The flagship demo is
 the original Bad Apple!! film pressed into a stack of contribution years: the
 poster is the film, and scrolling it is playback.
 
-![Bad Apple!! printed as a stack of contribution years](docs/preview.png)
+![Four moments of Bad Apple!! printed across twelve years of contribution graph](docs/preview.png)
 
-## Examples
+The same poster as a vector file: [poster.svg](docs/poster.svg).
 
-* [Six frames](docs/poster-6-frames.svg)
-* [Three frames](docs/poster-3-frames.svg)
+## Watch it move
+
+The film on the left, the same moments printed on the right, with the film's
+own audio: **[bad_apple_compare.mp4 in the v1.0
+release](https://github.com/mrtfff/BadApple-on-github-contribution-graph/releases/download/v1.0/bad_apple_compare.mp4)**
+(1184 × 346, the full 219 seconds, 17 MB). The release page has a player.
+
+```bash
+python3 -m badapple compare bad_apple.mp4 -o out/compare.mp4 --frames 2628 --fps 12
+```
+
+## Get a film to print
+
+Any video works. For the demo, the original Bad Apple!!, which its author
+distributes free of charge:
+
+```bash
+mkdir -p assets
+curl -L -o assets/bad_apple.mp4 https://raw.githubusercontent.com/CalvinLoke/bad-apple/master/BadApple.mp4
+```
+
+The tool checks its own prerequisites first: it tells you if `ffmpeg` or
+`ffprobe` is missing, if Pillow is missing, or if the film is not where the
+settings file expects it, and points at the fix instead of raising a traceback.
 
 ## How the graph is emulated
 
@@ -98,6 +120,9 @@ python3 -m badapple print assets/bad_apple.mp4 -o out/bad_apple.svg
 python3 -m badapple print assets/bad_apple.mp4 -o out/bad_apple.png --scale 1
 python3 -m badapple print assets/bad_apple.mp4 --frames 3
 
+# one moment instead of the whole film, which is how docs/poster.svg was made
+python3 -m badapple print assets/bad_apple.mp4 --at 45 --frames 4 --bands 3 -o docs/poster.svg
+
 # play it in the terminal, exporting a GIF or an MP4 along the way
 python3 -m badapple play assets/bad_apple.mp4 --fps 12 --gif out/bad_apple.gif
 python3 -m badapple play assets/bad_apple.mp4 --frames 60 --fps 6 --mp4 out/bad_apple.mp4 --once
@@ -116,6 +141,7 @@ python3 -m badapple compare assets/bad_apple.mp4 -o out/compare.mp4 --frames 262
 |------|---------|
 | `-o`, `--out` | `.svg`, `.png` or `.txt`; anything else falls back to text (default: text on stdout) |
 | `--frames N` | frames sampled across the film (default 53) |
+| `--at S` | start sampling this many seconds into the film (default 0) |
 | `--bands K` | year bands each frame is printed across (default 3) |
 | `--fit {subject,crop,squash}` | how much of the frame to keep (default `subject`) |
 | `--pool {coverage,max,area}` | how a window becomes cells (default `coverage`) |
@@ -222,14 +248,15 @@ pip install -r requirements-dev.txt
 python3 -m pytest
 ```
 
-116 tests cover the date geometry, the colour buckets, the subject window, the
-three pooling modes, the band layout, all three renderers, the sound paths and
-the CLI. The ffmpeg-backed ones build their own one-second clip and skip when
-ffmpeg is not installed; the rest are pure Python.
+123 tests cover the date geometry, the colour buckets, the subject window, the
+three pooling modes, the band layout, all three renderers, the preflight
+checks, the sound paths and the CLI. The ffmpeg-backed ones build their own
+one-second clip and skip when ffmpeg is not installed; the rest are pure Python.
 
 ## Credits and licence
 
-The video is not in this repository. Bad Apple!! is (c) 2007-2008
-has'n'/Anarchy and is distributed by its author, so fetch your own copy and pass
-any path to the tool; `assets/bad_apple.mp4` is the path the settings file
-expects. The code is MIT licensed.
+The film is not in this repository. Bad Apple!! is (c) 2007-2008
+has'n'/Anarchy and is distributed free of charge by its author, so fetch your
+own copy as shown above and point the tool at it; `assets/bad_apple.mp4` is the
+path the settings file expects. The v1.0 release asset is derived from that
+film and is subject to the same terms. The code is MIT licensed.

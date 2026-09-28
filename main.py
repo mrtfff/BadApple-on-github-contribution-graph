@@ -40,6 +40,9 @@ from pathlib import Path
 from badapple import Player, Printer, duration, read_bitmaps, write_output, write_video
 from badapple.compare import build_frames
 from badapple.sound import resolve_music
+from badapple.check import (
+    binary_hint, film_hint, has_pillow, missing_binaries, needs_pillow, pillow_hint,
+)
 
 VIDEO = "assets/bad_apple.mp4"
 CIKTI = "out/bad_apple.png"
@@ -194,7 +197,7 @@ def _videolar() -> list[Path]:
 
 
 def _videoyu_coz() -> Path:
-    """VIDEO yolunu çöz: yoksa aynı isimdeki dosyayı projede ara."""
+    """VIDEO yolunu çöz: yoksa aynı isimli dosyayı projede ara."""
     yol = Path(VIDEO).expanduser()
     if yol.exists():
         return yol
@@ -204,7 +207,22 @@ def _videoyu_coz() -> Path:
     bulunan = _videolar()
     ipucu = ("bulunan videolar: " + ", ".join(str(p) for p in bulunan)) if bulunan \
         else "bu klasörde hiç video yok"
-    raise FileNotFoundError(f"video bulunamadı: {VIDEO}\n       {ipucu}")
+    raise FileNotFoundError(f"video bulunamadı: {VIDEO}\n{film_hint(VIDEO)}"
+                            + (f"\n       {ipucu}" if bulunan else ""))
+
+
+def _hazirlik() -> None:
+    """Ne eksikse başlamadan söyle."""
+    eksik = missing_binaries()
+    if eksik:
+        raise RuntimeError(binary_hint())
+    if needs_pillow([_yol(CIKTI), _yol(GIF), _yol(MP4), _yol(KARSILASTIR)]):
+        if not has_pillow():
+            raise RuntimeError(pillow_hint())
+
+
+def _yol(deger: str | None) -> Path | None:
+    return Path(deger) if deger else None
 
 
 def _printer(fill_outside: bool = False) -> Printer:
@@ -219,6 +237,7 @@ def _printer(fill_outside: bool = False) -> Printer:
 
 
 def calistir() -> None:
+    _hazirlik()
     video = _videoyu_coz()
     frames = read_bitmaps(
         video,

@@ -143,3 +143,19 @@ def test_squash_keeps_the_frame_off_the_edges(clip):
 def test_missing_file_is_reported(tmp_path):
     with pytest.raises(FileNotFoundError):
         read_bitmaps(tmp_path / "nope.mp4", count=1, size=(53, 7))
+
+
+@requires_ffmpeg
+def test_start_offset_changes_where_the_frames_come_from(moving):
+    whole = read_bitmaps(moving, count=2, size=(53, 7))
+    later = read_bitmaps(moving, count=2, size=(53, 7), start=0.5)
+    assert len(later) == 2
+    assert later[0].pixels != whole[0].pixels
+
+
+@requires_ffmpeg
+def test_start_outside_the_film_is_refused(clip):
+    with pytest.raises(ValueError):
+        read_bitmaps(clip, count=1, size=(53, 7), start=99.0)
+    with pytest.raises(ValueError):
+        read_bitmaps(clip, count=1, size=(53, 7), start=-1.0)

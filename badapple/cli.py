@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from .calendar import WEEKS, WEEKDAYS
+from .check import SAMPLE_FILM, missing_binaries
 from .compare import build_frames
 from .frames import FITS, POOLS, duration, read_bitmaps
 from .player import Player, write_video
@@ -62,6 +63,7 @@ def _read(args: argparse.Namespace, count: int):
         pool=args.pool,
         crop_threshold=args.crop_threshold,
         margin=args.margin,
+        start=getattr(args, "at", 0.0),
     )
 
 
@@ -78,6 +80,8 @@ def build_parser() -> argparse.ArgumentParser:
                              help="output file: .svg, .png or .txt (default: stdout as text)")
     printer_cmd.add_argument("--frames", type=int, default=DEFAULT_FRAMES,
                              help=f"frames sampled from the film (default: {DEFAULT_FRAMES})")
+    printer_cmd.add_argument("--at", type=float, default=0.0,
+                             help="start sampling this many seconds into the film")
     printer_cmd.add_argument("--start-year", type=int, default=None,
                              help="year of the newest band (default: this year)")
     printer_cmd.add_argument("--fill", action="store_true",
@@ -171,8 +175,15 @@ def _run_compare(args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    eksik = missing_binaries()
+    if eksik:
+        print(f"error: not found on PATH: {', '.join(eksik)}; install ffmpeg and retry",
+              file=sys.stderr)
+        return 3
     if not args.video.exists():
-        print(f"no such file: {args.video}", file=sys.stderr)
+        print(f"error: no such file: {args.video}", file=sys.stderr)
+        print(f"       any video works; for the demo film:\n"
+              f"       curl -L -o {args.video} {SAMPLE_FILM}", file=sys.stderr)
         return 2
     try:
         if args.command == "print":
