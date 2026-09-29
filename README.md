@@ -11,10 +11,15 @@ The same poster as a vector file: [poster.svg](docs/poster.svg).
 
 ## Watch it move
 
-The film on the left, the same moments printed on the right, with the film's
-own audio: **[bad_apple_compare.mp4 in the v1.0
-release](https://github.com/mrtfff/BadApple-on-github-contribution-graph/releases/download/v1.0/bad_apple_compare.mp4)**
-(1184 × 346, the full 219 seconds, 17 MB). The release page has a player.
+GitHub strips `<video>` and `<iframe>` out of a README, so nothing plays inline
+except a GIF. This is twelve seconds of the film on the left and the same
+moments printed on the right:
+
+![The film on the left, the same moments printed on the right](docs/preview.gif)
+
+The full-length version, 219 seconds with the film's own audio, is in the v1.0
+release: **[bad_apple_compare.mp4](https://github.com/mrtfff/BadApple-on-github-contribution-graph/releases/download/v1.0/bad_apple_compare.mp4)**
+(1184 × 346, 16 MB). Rebuild it with:
 
 ```bash
 python3 -m badapple compare bad_apple.mp4 -o out/compare.mp4 --frames 2628 --fps 12
