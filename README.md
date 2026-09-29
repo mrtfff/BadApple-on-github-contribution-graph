@@ -257,7 +257,7 @@ pip install -r requirements-dev.txt
 python3 -m pytest
 ```
 
-129 tests cover the date geometry, the colour buckets, the subject window, the
+130 tests cover the date geometry, the colour buckets, the subject window, the
 three pooling modes, the band layout, all three renderers, the preflight
 checks, the sound paths and the CLI. The ffmpeg-backed ones build their own
 one-second clip and skip when ffmpeg is not installed; the rest are pure Python.
