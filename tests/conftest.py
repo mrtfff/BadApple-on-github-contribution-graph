@@ -91,3 +91,24 @@ def moving(tmp_path_factory) -> Path:
         check=True,
     )
     return video
+
+
+@pytest.fixture(scope="session")
+def indexed_clip(tmp_path_factory) -> Path:
+    """Eight frames at 2 fps, frame n carrying a white bar in column n."""
+    from PIL import Image, ImageDraw
+
+    if not FFMPEG:
+        pytest.skip("ffmpeg is not installed")
+    media = tmp_path_factory.mktemp("indexed")
+    for n in range(8):
+        image = Image.new("L", (64, 48), 0)
+        ImageDraw.Draw(image).rectangle([n * 8, 0, n * 8 + 7, 47], fill=255)
+        image.save(media / f"f{n:02d}.png")
+    video = media / "indexed.mp4"
+    subprocess.run(
+        [FFMPEG, "-v", "error", "-y", "-framerate", "2", "-i", str(media / "f%02d.png"),
+         "-c:v", "libx264", "-crf", "0", "-pix_fmt", "yuv420p", str(video)],
+        check=True,
+    )
+    return video

@@ -9,8 +9,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 from typing import Iterator
-
-from .frames import duration
+from .frames import duration, frame_indices, select_filter
 from .player import Player
 from .render import font, render_png
 
@@ -21,24 +20,27 @@ LABEL_TEXT = "#ffffff"
 LABELS = ("ORIGINAL", "CONTRIBUTION GRAPH")
 
 
-def read_original(path: str | Path, count: int, height: int) -> list:
-    """Decode ``count`` frames of the film, scaled to ``height`` pixels."""
+def read_original(path: str | Path, count: int, height: int, start: float = 0.0) -> list:
+    """Decode ``count`` frames of the film, scaled to ``height`` pixels.
+
+    The frames are chosen with the same index arithmetic the printed picture
+    uses, so the left and the right of a comparison are always the same moment.
+    """
     from PIL import Image
 
     path = Path(path)
-    seconds = duration(path)
+    first, step = frame_indices(path, count, start)
     size = _size_for(path, height)
-    filters = []
-    if seconds > 0:
-        filters.append(f"fps={count / seconds:.6f}")
-    filters.append(f"scale={size[0]}:{size[1]}:flags=area")
-    filters.append("format=rgb24")
+    filters = [select_filter(first, step),
+               f"scale={size[0]}:{size[1]}:flags=area",
+               "format=rgb24"]
     frame_bytes = size[0] * size[1] * 3
-    proc = subprocess.run(
-        ["ffmpeg", "-v", "error", "-i", str(path), "-vf", ",".join(filters),
-         "-frames:v", str(count), "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
-        check=False, capture_output=True,
-    )
+    command = ["ffmpeg", "-v", "error", "-y", "-i", str(path)]
+    if start > 0:
+        command += ["-ss", f"{start:.3f}"]
+    command += ["-vf", ",".join(filters), "-vsync", "0", "-frames:v", str(count),
+                "-f", "rawvideo", "-pix_fmt", "rgb24", "-"]
+    proc = subprocess.run(command, check=False, capture_output=True)
     if proc.returncode != 0:
         raise RuntimeError(f"ffmpeg failed: {proc.stderr.decode(errors='replace').strip()}")
     raw = proc.stdout
@@ -89,9 +91,10 @@ def compose(original, graph, *, labels: bool = True):
     return canvas
 
 
-def build_frames(video: str | Path, player: Player, *, labels: bool = True) -> Iterator:
+def build_frames(video: str | Path, player: Player, *, labels: bool = True,
+                 start: float = 0.0) -> Iterator:
     """Yield one composited frame per film frame, original first."""
     graph_height = render_png(player.grids(player.frames[0]), scale=1).height
-    originals = read_original(video, len(player.frames), graph_height)
+    originals = read_original(video, len(player.frames), graph_height, start)
     for original, frame in zip(originals, player.frames):
         yield compose(original, render_png(player.grids(frame), scale=1), labels=labels)

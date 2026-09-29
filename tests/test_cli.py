@@ -119,3 +119,12 @@ def test_export_flag_does_not_shadow_the_input_video(tmp_path, capsys):
 def test_missing_video_is_reported(capsys, tmp_path):
     assert main(["print", str(tmp_path / "nope.mp4")]) == 2
     assert "no such file" in capsys.readouterr().err
+
+
+@requires_ffmpeg
+def test_compare_honours_the_at_offset(tmp_path, indexed_clip, capsys):
+    out = tmp_path / "later.mp4"
+    assert main(["compare", str(indexed_clip), "-o", str(out), "--frames", "4", "--fps", "2",
+                 "--bands", "1", "--music", "none", "--at", "1.0"]) == 0
+    assert out.exists()
+    assert "wrote 4 frames" in capsys.readouterr().err

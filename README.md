@@ -188,6 +188,7 @@ rows; without a terminal, or with `--no-color`, shade blocks take over.
 |------|---------|
 | `-o`, `--out` | the MP4 to write (required) |
 | `--frames N` | frames sampled across the film (default 53) |
+| `--at S` | start sampling this many seconds into the film (default 0) |
 | `--fps F` | frame rate of the export (default 12) |
 | `--music` | `source`, `generated`, `none`, or a path to a file (default `source`) |
 | `--crf N` | video quality, lower is better (default 18) |
@@ -196,6 +197,8 @@ rows; without a terminal, or with `--no-color`, shade blocks take over.
 
 Every `print` ink flag (`--bands`, `--fit`, `--pool`, `--threshold`,
 `--crop-threshold`, `--margin`, `--shade`, `--invert`, `--level`) works here too.
+Both halves of a frame are chosen by the same index arithmetic, so the film on
+the left and the print on the right are always the same moment.
 
 ## Making it slower
 
@@ -254,7 +257,7 @@ pip install -r requirements-dev.txt
 python3 -m pytest
 ```
 
-126 tests cover the date geometry, the colour buckets, the subject window, the
+129 tests cover the date geometry, the colour buckets, the subject window, the
 three pooling modes, the band layout, all three renderers, the preflight
 checks, the sound paths and the CLI. The ffmpeg-backed ones build their own
 one-second clip and skip when ffmpeg is not installed; the rest are pure Python.

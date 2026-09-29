@@ -13,6 +13,7 @@ Ayarlar:
     KARE_SAYISI       filmin kaç anı örneklenir
     BAND_SAYISI       bir kare kaç yıl bandına yayılır, bir bant 7 satırdır
     EN_YENI_YIL       None bu yıl, bir sayı o yılda biter
+    BASLANGIC          filmin kaçıncı saniyesinden örneklenmeye başlanır
     KIRPMA            subject mürekkebe göre kırpar, crop oranı korur,
                       squash kareyi olduğu gibi kullanır
     HAVUZ             coverage hücredeki mürekkep oranı, max bir piksel yeter,
@@ -51,6 +52,7 @@ PNG_OLCEK = 1
 KARE_SAYISI = 53
 BAND_SAYISI = 3
 EN_YENI_YIL = None
+BASLANGIC = 0.0                   # filmin kaçıncı saniyesinden başlanır
 
 KIRPMA = "subject"
 HAVUZ = "coverage"
@@ -87,6 +89,7 @@ _MENU = [
     ("Kare sayısı", "KARE_SAYISI", int, None, None),
     ("Bant sayısı", "BAND_SAYISI", int, None, None),
     ("En yeni yıl", "EN_YENI_YIL", str, None, None),
+    ("Başlangıç (sn)", "BASLANGIC", float, None, (0, None)),
     ("Kırpma", "KIRPMA", str, ["subject", "crop", "squash"], None),
     ("Havuz", "HAVUZ", str, ["coverage", "max", "area"], None),
     ("Eşik (hücre)", "HUCRE_ESIGI", float, None, (0, 1)),
@@ -248,6 +251,7 @@ def calistir() -> None:
         pool=HAVUZ,
         crop_threshold=BOLGE_ESIGI,
         margin=BOLGE_PAYI,
+        start=BASLANGIC,
     )
 
     printer = _printer()
@@ -284,10 +288,11 @@ def _karsilastir() -> None:
         pool=HAVUZ,
         crop_threshold=BOLGE_ESIGI,
         margin=BOLGE_PAYI,
+        start=BASLANGIC,
     )
     player = Player(frames, fps=KARSILASTIR_FPS, printer=_printer(fill_outside=True))
     with resolve_music(MUZIK, duration(video), source=video) as music:
-        written = write_video(build_frames(video, player), KARSILASTIR,
+        written = write_video(build_frames(video, player, start=BASLANGIC), KARSILASTIR,
                               fps=KARSILASTIR_FPS, audio=music)
     etiket = {"source": "filmin kendi sesi", "generated": "üretilen döngü",
               "none": "sessiz"}.get(MUZIK) or Path(MUZIK).name

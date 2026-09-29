@@ -167,6 +167,25 @@ def frame_rate(path: str | Path) -> float:
         raise ValueError(f"cannot read the frame rate of {path}") from exc
 
 
+def frame_indices(path: str | Path, count: int, start: float = 0.0) -> tuple[int, int]:
+    """First frame index and stride for sampling ``count`` frames from ``start``.
+
+    Both the cell reducer and the side-by-side compositor call this, so the
+    printed picture and the film frame beside it are always the same frame.
+    """
+    seconds = duration(path)
+    if not 0 <= start < seconds:
+        raise ValueError(f"start must be inside the film: 0 <= start < {seconds:.2f}")
+    rate = frame_rate(path)
+    first = round(start * rate)
+    return first, max(1, round((seconds - start) * rate / count))
+
+
+def select_filter(first: int, step: int) -> str:
+    """An ffmpeg ``select`` expression keeping every ``step``-th frame from ``first``."""
+    return f"select=if(gte(n\\,{first})*eq(mod(n-{first}\\,{step})\\,0)\\,1\\,0)"
+
+
 def read_bitmaps(
     path: str | Path,
     *,
@@ -193,14 +212,8 @@ def read_bitmaps(
         raise ValueError("bands must be >= 1")
     if not path.exists():
         raise FileNotFoundError(path)
-    seconds = duration(path)
-    if not 0 <= start < seconds:
-        raise ValueError(f"start must be inside the film: 0 <= start < {seconds:.2f}")
-    rate = frame_rate(path)
-    first = round(start * rate)
-    step = max(1, round((seconds - start) * rate / count))
-    pick = f"if(gte(n\\,{first})*eq(mod(n-{first}\\,{step})\\,0)\\,1\\,0)"
-    filters = [f"select={pick}",
+    first, step = frame_indices(path, count, start)
+    filters = [select_filter(first, step),
                f"scale={PROBE_WIDTH}:{PROBE_HEIGHT}:flags=area",
                "format=gray"]
     frame_size = PROBE_WIDTH * PROBE_HEIGHT

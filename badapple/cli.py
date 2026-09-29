@@ -113,6 +113,8 @@ def build_parser() -> argparse.ArgumentParser:
     compare_cmd.add_argument("-o", "--out", type=Path, required=True)
     compare_cmd.add_argument("--frames", type=int, default=DEFAULT_FRAMES,
                              help=f"frames sampled from the film (default: {DEFAULT_FRAMES})")
+    compare_cmd.add_argument("--at", type=float, default=0.0,
+                             help="start sampling this many seconds into the film")
     compare_cmd.add_argument("--fps", type=float, default=12.0)
     compare_cmd.add_argument("--music", default="source",
                              help="source: the film's own audio (default), generated: a "
@@ -164,7 +166,8 @@ def _run_compare(args: argparse.Namespace) -> int:
         player = Player(_read(args, args.frames), fps=args.fps,
                         printer=_printer(args, fill_outside=True))
         written = write_video(
-            build_frames(args.video, player, labels=not args.no_labels),
+            build_frames(args.video, player, labels=not args.no_labels,
+                          start=getattr(args, "at", 0.0)),
             args.out, fps=args.fps, crf=args.crf, audio=music,
         )
     label = {"generated": "üretilen döngü", "source": "filmin kendi sesi",
